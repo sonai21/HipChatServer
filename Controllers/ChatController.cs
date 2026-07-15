@@ -28,7 +28,7 @@ public class ChatController : ControllerBase
             //retive chat completion service from kernel
             var chatCompletionService = _kernel.GetRequiredService<IChatCompletionService>();
 
-            //create chat history with previous promt
+            //create chat history with previous promt.
             var chatHistory = new ChatHistory("AI Generated");
             chatHistory.AddUserMessage(question);
 
