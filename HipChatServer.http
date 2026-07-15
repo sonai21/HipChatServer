@@ -1,0 +1,6 @@
+@HipChatServer_HostAddress = http://localhost:5108
+
+GET {{HipChatServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
