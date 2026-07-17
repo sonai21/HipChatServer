@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using HipChatServer.Models.DTOs;
+using HipChatServer.ServiceContracts;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -9,39 +11,27 @@ namespace HipChatServer.Controllers;
 [ApiController]
 public class ChatController : ControllerBase
 {
-    private readonly Kernel _kernel;
-    public ChatController(Kernel kernel)
+    private readonly IChatService _chatService;
+    public ChatController(IChatService chatService)
     {
-        _kernel = kernel;
+        _chatService = chatService;
     }
 
     [HttpPost("askQuestion")]
-    public async Task<IActionResult> AskQuestion([FromBody] string question)
+    public async Task<IActionResult> AskQuestion(MessageRequestDTO request)
     {
-        if (string.IsNullOrWhiteSpace(question))
+        if (string.IsNullOrWhiteSpace(request.Content))
         {
-            return BadRequest("Prompt can not be empty!");
+            return BadRequest("Prompt cannot be empty!");
         }
-
         try
         {
-            //retive chat completion service from kernel
-            var chatCompletionService = _kernel.GetRequiredService<IChatCompletionService>();
-
-            //create chat history with previous promt.
-            var chatHistory = new ChatHistory("AI Generated");
-            chatHistory.AddUserMessage(question);
-
-            //sending request to LM Studio
-            var response = await chatCompletionService.GetChatMessageContentAsync(chatHistory, kernel: _kernel);
-
-            return Ok(new { Response = response.Content});
+            var aiGeneratedText = await _chatService.ProcessUserMessageAsync(request.ChatId, request.Content);
+            if (aiGeneratedText == null) return NotFound("Chat session not found1.");
+            return Ok(new { role = "ai", content=aiGeneratedText.AiResponse, chatId = aiGeneratedText.ChatId});
         }
-
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"An error occurred: {ex.Message}");
+        catch (Exception ex) {
+            return StatusCode(500, ex.Message);
         }
-
     }
 }

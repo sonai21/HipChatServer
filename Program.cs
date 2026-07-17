@@ -1,4 +1,8 @@
 using HipChatServer.Data;
+using HipChatServer.Repositories;
+using HipChatServer.RepositoryContracts;
+using HipChatServer.ServiceContracts;
+using HipChatServer.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;
 
@@ -10,6 +14,8 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 //Db Connection
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
