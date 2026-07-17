@@ -32,6 +32,17 @@ var kernelBuilder = Kernel.CreateBuilder().AddOpenAIChatCompletion(model, endpoi
 var kernel = kernelBuilder.Build();
 builder.Services.AddSingleton(kernel);
 
+//cors setup
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -46,5 +57,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseCors("AllowReactApp");
 
 app.Run();
