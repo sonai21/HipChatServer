@@ -33,17 +33,16 @@ var kernel = kernelBuilder.Build();
 builder.Services.AddSingleton(kernel);
 
 //cors setup
-builder.Services.AddCors(options =>
+builder.Services.AddCors(c =>
 {
-    options.AddPolicy("AllowReactApp", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
+    c.AddPolicy(
+        "AllowOrigin",
+        options => options.WithOrigins("http://localhost:5173").AllowAnyHeader().AllowAnyMethod().AllowCredentials()
+    );
 });
 
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -52,8 +51,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
-app.UseCors("AllowReactApp");
+app.UseHttpsRedirection();
+app.UseRouting();
+app.UseCors("AllowOrigin");
 
 app.UseAuthorization();
 

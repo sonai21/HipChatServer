@@ -22,18 +22,20 @@ public class ChatService : IChatService
     }
     public async Task<MessageResponseDTO?> ProcessUserMessageAsync(Guid id, string content)
     {
+        var isNewChat = false;
         Chat chat;
         if (id == null || id == Guid.Empty)
         {
             chat = new Chat()
             {
                 Id = Guid.NewGuid(),
-                Title = content.Length > 30 ? content.Substring(0, 30) + "..." : content,
+                Title = "New Chat",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 RecentMessageCount = 1,
             };
             await _chatRepository.AddChatAsync(chat);
+            isNewChat = true;
         }
         else
         {
@@ -79,13 +81,17 @@ public class ChatService : IChatService
         chat.UpdatedAt = DateTime.UtcNow;
 
         await _chatRepository.SaveChangesAsync();
+        if(isNewChat == true)
+        {
+            _ = Task.Run(() => GenerateAndSaveChatTitle(chat.Id, content));
+        }
         if (chat.RecentMessageCount >= 10)
         {
             var rawHistory = pastMessages.Where(m => m.Role == "user");
             var unSummarizedUserMessages = rawHistory.TakeLast(chat.RecentMessageCount);
             var messageToSummarize = unSummarizedUserMessages.Take(5);
             var summarizeContent = string.Join("\n", messageToSummarize.Select(m => m.Content));
-           _= Task.Run(() => GenerateAndSaveChatSummary(chat.Id, summarizeContent));
+            _ = Task.Run(() => GenerateAndSaveChatSummary(chat.Id, summarizeContent));
         }
 
         MessageResponseDTO aiResponse = new MessageResponseDTO
@@ -138,6 +144,36 @@ public class ChatService : IChatService
         catch (Exception ex)
         {
             Console.WriteLine($"Failed to summarize chat {chatId}: {ex.Message}");
+        }
+    }
+
+    //method for generating chat title
+    private async Task GenerateAndSaveChatTitle(Guid chatId, string firstMessage)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var bgRepo = scope.ServiceProvider.GetRequiredService<IChatRepository>();
+            var bgKernel = scope.ServiceProvider.GetRequiredService<Kernel>();
+            var bgCompletionService = bgKernel.GetRequiredService<IChatCompletionService>();
+            var bgChat = await bgRepo.GetChatByIdAsync(chatId);
+            if (bgChat == null) return;
+
+            //title generation
+            var titlePrompt = new ChatHistory("You are a title generator. Generate a concise, 3 to 5 word title for this conversation based on the user's first message. Respond ONLY with the title. Do not use quotes, punctuation, or conversational filler.");
+            titlePrompt.AddUserMessage(firstMessage);
+            var titleResult = await bgCompletionService.GetChatMessageContentAsync(titlePrompt, kernel: bgKernel);
+
+            //update database
+            if (bgChat != null)
+            {
+                bgChat.Title = titleResult.Content;
+                await bgRepo.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Background process failed to generate chat {chatId} title : {ex.Message}");
         }
     }
 }
