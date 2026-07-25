@@ -26,7 +26,7 @@ public class ChatController : ControllerBase
         }
         try
         {
-            var aiGeneratedText = await _chatService.ProcessUserMessageAsync(request.ChatId, request.Content);
+            var aiGeneratedText = await _chatService.ProcessUserMessageAsync(request.ChatId.Value, request.Content);
             if (aiGeneratedText == null) return NotFound("Chat session not found.");
             return Ok(new { role = "ai", content=aiGeneratedText.AiResponse, chatId = aiGeneratedText.ChatId});
         }

@@ -79,6 +79,7 @@ public class ChatService : IChatService
         };
 
         chat.UpdatedAt = DateTime.UtcNow;
+        await _chatRepository.AddMessgaeAsync(aiMessage);
 
         await _chatRepository.SaveChangesAsync();
         if(isNewChat == true)
