@@ -24,6 +24,11 @@ public class ChatRepository : IChatRepository
         await _dbContext.Messages.AddAsync(message);
     }
 
+    public async Task<List<Chat>> GetAllChatsAsync()
+    {
+        return await _dbContext.Chats.ToListAsync();
+    }
+
     public async Task<Chat?> GetChatByIdAsync(Guid id)
     {
         return await _dbContext.Chats.FindAsync(id);

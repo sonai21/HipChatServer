@@ -20,6 +20,54 @@ public class ChatService : IChatService
         _kernel = kernel;
         _scopeFactory = scopeFactory;
     }
+
+    public async Task<List<ChatResponseDTO>> GetAllChats()
+    {
+        List<Chat> allChats = await _chatRepository.GetAllChatsAsync();
+        if(allChats == null)
+        {
+            return null;
+        }
+        List<ChatResponseDTO> result = new List<ChatResponseDTO>();
+        foreach (Chat chat in allChats) {
+            ChatResponseDTO chatResponseDTO = new ChatResponseDTO()
+            {
+                Id = chat.Id,
+                Title = chat.Title,
+                CreatedAt = chat.CreatedAt,
+                UpdatedAt = chat.UpdatedAt,
+            };
+            result.Add(chatResponseDTO);
+        }
+        return result;
+    }
+
+    public async Task<ChatHistoryResponseDTO> GetChatHistory(Guid id)
+    {
+        Chat chat = await _chatRepository.GetChatByIdAsync(id);
+        if(chat == null)
+        {
+            return null; 
+        }
+        var pastMessages = await _chatRepository.GetChatHistoryAsync(id);
+
+        ChatHistoryResponseDTO result = new ChatHistoryResponseDTO()
+        {
+            Id = chat.Id,
+            Title = chat.Title,
+            CreatedAt = chat.CreatedAt,
+            UpdatedAt = chat.UpdatedAt,
+            Messages = pastMessages.Select(m => new ChatMessageDTO
+            {
+                Id = m.Id,
+                Role = m.Role,
+                Content = m.Content,
+                CreatedAt = m.CreatedAt
+            }).ToList()
+        };
+        return result;
+    }
+
     public async Task<MessageResponseDTO?> ProcessUserMessageAsync(Guid id, string content)
     {
         var isNewChat = false;

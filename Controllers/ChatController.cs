@@ -34,4 +34,29 @@ public class ChatController : ControllerBase
             return StatusCode(500, ex.Message);
         }
     }
+
+    [HttpGet("getAllChats")]
+    public async Task<IActionResult> GetAllChats()
+    {
+        var allChats = await _chatService.GetAllChats();
+        return Ok(allChats);
+    }
+
+    [HttpGet("getChatByChatId")]
+    public async Task<IActionResult> GetChatHistory(Guid chatId)
+    {
+        if (chatId == Guid.Empty)
+        {
+            return BadRequest("Chat ID is required."); 
+        }
+
+        var chatHistory = await _chatService.GetChatHistory(chatId);
+
+        if (chatHistory == null)
+        {
+            return NotFound("Chat not found.");
+        }
+
+        return Ok(chatHistory);
+    }
 }
