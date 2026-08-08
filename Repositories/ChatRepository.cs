@@ -26,7 +26,7 @@ public class ChatRepository : IChatRepository
 
     public async Task<List<Chat>> GetAllChatsAsync()
     {
-        return await _dbContext.Chats.ToListAsync();
+        return await _dbContext.Chats.OrderByDescending(c => c.CreatedAt).ToListAsync();
     }
 
     public async Task<Chat?> GetChatByIdAsync(Guid id)
